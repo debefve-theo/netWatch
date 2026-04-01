@@ -185,6 +185,42 @@ docker compose build
 docker compose up -d
 ```
 
+## Déploiement automatique via GitHub Actions
+
+Le workflow [`.github/workflows/build-deploy-prod.yml`](./.github/workflows/build-deploy-prod.yml) :
+
+- build l'image Docker multi-arch
+- push l'image sur `ghcr.io`
+- se connecte en SSH sur le VPS
+- met à jour le dépôt sur `main`
+- déploie l'image `prod` avec [`scripts/deploy_prod.sh`](./scripts/deploy_prod.sh)
+
+### Variables GitHub à configurer
+
+Variables de repository :
+
+- `PROD_DEPLOY_HOST`
+- `PROD_DEPLOY_PORT`
+- `PROD_DEPLOY_USER`
+- `PROD_DEPLOY_PATH`
+- `GHCR_USERNAME` optionnel, sinon le owner GitHub du repo est utilisé
+
+Secrets GitHub :
+
+- `PROD_DEPLOY_SSH_KEY`
+- `GHCR_READ_TOKEN`
+
+Le `GHCR_READ_TOKEN` doit au minimum avoir le scope `read:packages` pour que le VPS puisse faire `docker pull` sur `ghcr.io`.
+
+### Pré-requis sur le VPS
+
+- le repo doit déjà être cloné dans `PROD_DEPLOY_PATH`
+- le VPS doit avoir `git`, `docker` et `docker compose`
+- la branche `main` du repo doit être accessible depuis le VPS
+- le fichier `.env` du VPS doit être présent et configuré
+
+Le workflow exporte automatiquement `APP_IMAGE=ghcr.io/<owner>/netwatch:prod` pendant le déploiement, donc tu n'as pas besoin de le stocker dans `.env`.
+
 ## Base de données
 
 Le schéma Prisma définit deux tables :
