@@ -11,5 +11,5 @@ fi
 export APP_IMAGE="$APP_IMAGE_INPUT"
 
 docker compose pull app
-docker compose up -d --no-build
+docker compose up -d --no-build --remove-orphans
 docker compose ps

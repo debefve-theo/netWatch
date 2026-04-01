@@ -83,7 +83,7 @@ cp .env.example .env
 Variables principales :
 
 ```env
-APP_URL="https://speedtest.squal.cloud"
+APP_URL="http://speedtest.squal.cloud:8080"
 NEXT_PUBLIC_APP_NAME="NetWatch"
 PORT="3000"
 HOSTNAME="0.0.0.0"
@@ -119,7 +119,6 @@ Les fichiers Docker fournis :
 - [`Dockerfile`](./Dockerfile)
 - [`docker-compose.yml`](./docker-compose.yml)
 - [`docker/entrypoint.sh`](./docker/entrypoint.sh)
-- [`docker/nginx/default.conf`](./docker/nginx/default.conf)
 - [`.env.docker.example`](./.env.docker.example)
 
 ### Préparer l’environnement Docker
@@ -131,7 +130,8 @@ cp .env.docker.example .env
 Puis ajuster au minimum :
 
 ```env
-APP_URL=https://speedtest.squal.cloud
+APP_URL=http://speedtest.squal.cloud:8080
+APP_PORT=8080
 POSTGRES_PASSWORD=change-me
 DATABASE_URL=postgresql://speedtest:change-me@postgres:5432/speedtest_db?schema=public
 API_KEY_PEPPER=generate-with-openssl-rand-hex-32
@@ -154,14 +154,14 @@ Services démarrés :
 ### Vérifier
 
 ```bash
-curl http://127.0.0.1/api/health
+curl http://127.0.0.1:8080/api/health
 docker compose ps
 ```
 
 Le dashboard sera ensuite servi sur :
 
 ```text
-https://speedtest.squal.cloud
+http://speedtest.squal.cloud:8080
 ```
 
 ### Seed initial
@@ -194,6 +194,8 @@ Le workflow [`.github/workflows/build-deploy-prod.yml`](./.github/workflows/buil
 - se connecte en SSH sur le VPS
 - met à jour le dépôt sur `main`
 - déploie l'image `prod` avec [`scripts/deploy_prod.sh`](./scripts/deploy_prod.sh)
+
+Le script de déploiement utilise `docker compose up -d --remove-orphans`, ce qui supprime automatiquement l'ancien conteneur `nginx` si le VPS avait encore l'ancienne stack.
 
 ### Variables GitHub à configurer
 
@@ -364,7 +366,7 @@ sudo apt install speedtest -y
 Créer un `.env` dans le même dossier que le script :
 
 ```env
-SPEEDTEST_API_URL=https://speedtest.squal.cloud/api/ingest/speedtest
+SPEEDTEST_API_URL=http://speedtest.squal.cloud:8080/api/ingest/speedtest
 SPEEDTEST_API_KEY=raw_key_from_seed_or_create_device
 SPEEDTEST_DEVICE_ID=cm9exampledeviceid123456789
 SPEEDTEST_CSV_PATH=/home/pi/netwatch/speedtest_results.csv
