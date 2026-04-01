@@ -1,0 +1,52 @@
+// Prisma schema for the speedtest monitoring application
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id             String   @id @default(cuid())
+  name           String
+  apiKeyHash     String   @unique @map("api_key_hash")
+  locationLabel  String?  @map("location_label")
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  lastSeenAt     DateTime? @map("last_seen_at")
+
+  speedtestResults SpeedtestResult[]
+
+  @@index([enabled])
+  @@map("devices")
+}
+
+model SpeedtestResult {
+  id             String   @id @default(cuid())
+  deviceId       String   @map("device_id")
+  device         Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  measuredAt     DateTime @map("measured_at")
+  pingMs         Float    @map("ping_ms")
+  jitterMs       Float    @map("jitter_ms")
+  downloadMbps   Float    @map("download_mbps")
+  uploadMbps     Float    @map("upload_mbps")
+  packetLoss     Float    @default(0) @map("packet_loss")
+  isp            String?
+  externalIp     String?  @map("external_ip")
+  serverId       String?  @map("server_id")
+  serverName     String?  @map("server_name")
+  serverLocation String?  @map("server_location")
+  serverCountry  String?  @map("server_country")
+  resultUrl      String?  @map("result_url")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([deviceId, measuredAt(sort: Desc)])
+  @@index([measuredAt(sort: Desc)])
+  @@unique([deviceId, measuredAt])
+  @@map("speedtest_results")
+}

@@ -1,0 +1,12 @@
+.next
+node_modules
+.env
+.env.local
+coverage
+dist
+*.log
+__pycache__
+.DS_Store
+.claude
+*.zip
+*.tsbuildinfo
