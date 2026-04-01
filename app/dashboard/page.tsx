@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowDownToLine, ArrowUpToLine, Gauge, HardDrive, RefreshCw } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, Gauge, HardDrive } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LineChartCard } from "@/components/dashboard/line-chart-card";
 import { BarChartCard } from "@/components/dashboard/bar-chart-card";
@@ -13,6 +13,12 @@ export default function OverviewPage() {
   const { data, isLoading, isError, refetch } = useOverviewData();
 
   const kpis = data?.kpis;
+  const avgDownloadValue = isLoading || !kpis ? "—" : kpis.avgDownload.toFixed(1);
+  const avgUploadValue = isLoading || !kpis ? "—" : kpis.avgUpload.toFixed(1);
+  const avgLatencyValue = isLoading || !kpis ? "—" : kpis.avgPing.toFixed(1);
+  const avgLatencySubtitle = isLoading || !kpis ? undefined : `Packet loss ${kpis.packetLoss}%`;
+  const devicesOnlineValue = isLoading || !kpis ? "—" : `${kpis.devicesOnline}/${kpis.devicesTotal}`;
+  const devicesOnlineSubtitle = isLoading || !kpis ? undefined : `${kpis.totalTests.toLocaleString()} total tests`;
 
   return (
     <div className="space-y-6">
@@ -20,7 +26,7 @@ export default function OverviewPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Avg Download"
-          value={isLoading ? "—" : kpis?.avgDownload.toFixed(1) ?? "—"}
+          value={avgDownloadValue}
           unit="Mbps"
           icon={<ArrowDownToLine className="h-4 w-4" />}
           accent="blue"
@@ -30,7 +36,7 @@ export default function OverviewPage() {
         />
         <StatCard
           title="Avg Upload"
-          value={isLoading ? "—" : kpis?.avgUpload.toFixed(1) ?? "—"}
+          value={avgUploadValue}
           unit="Mbps"
           icon={<ArrowUpToLine className="h-4 w-4" />}
           accent="emerald"
@@ -40,9 +46,9 @@ export default function OverviewPage() {
         />
         <StatCard
           title="Avg Latency"
-          value={isLoading ? "—" : kpis?.avgPing.toFixed(1) ?? "—"}
+          value={avgLatencyValue}
           unit="ms"
-          subtitle={isLoading ? undefined : `Packet loss ${kpis?.packetLoss}%`}
+          subtitle={avgLatencySubtitle}
           icon={<Gauge className="h-4 w-4" />}
           accent="violet"
           trend={isLoading ? undefined : { value: -1.3 }}
@@ -51,8 +57,8 @@ export default function OverviewPage() {
         />
         <StatCard
           title="Devices Online"
-          value={isLoading ? "—" : `${kpis?.devicesOnline}/${kpis?.devicesTotal}` ?? "—"}
-          subtitle={isLoading ? undefined : `${kpis?.totalTests.toLocaleString()} total tests`}
+          value={devicesOnlineValue}
+          subtitle={devicesOnlineSubtitle}
           icon={<HardDrive className="h-4 w-4" />}
           accent="amber"
           loading={isLoading}
