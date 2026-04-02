@@ -16,6 +16,7 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "import-speedtests": "tsx scripts/import-speedtests-csv.ts",
     "generate-key": "tsx scripts/generate-api-key.ts",
     "create-device": "tsx scripts/create-device.ts"
   },

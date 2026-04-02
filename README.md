@@ -137,6 +137,11 @@ DATABASE_URL=postgresql://speedtest:change-me@postgres:5432/speedtest_db?schema=
 API_KEY_PEPPER=generate-with-openssl-rand-hex-32
 DASHBOARD_PASSWORD=change-me
 SESSION_SECRET=generate-with-openssl-rand-hex-32
+ALERT_MIN_DOWNLOAD_MBPS=50
+ALERT_MIN_UPLOAD_MBPS=3
+ALERT_COOLDOWN_MINUTES=30
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
 ```
 
 ### Lancer la stack

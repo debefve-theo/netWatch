@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { authenticateDeviceRequest } from "@/lib/auth";
+import { maybeSendPerformanceAlert } from "@/lib/alerts";
 import { jsonError, jsonOk, parseLimitedJson, zodIssues } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { serializeSpeedtestResult } from "@/lib/serializers";
@@ -65,6 +66,16 @@ export async function POST(request: NextRequest) {
       });
 
       return created;
+    });
+
+    await maybeSendPerformanceAlert(auth.device, {
+      measuredAt,
+      downloadMbps: parsed.data.downloadMbps,
+      uploadMbps: parsed.data.uploadMbps,
+      pingMs: parsed.data.pingMs,
+      jitterMs: parsed.data.jitterMs,
+      packetLoss: parsed.data.packetLoss,
+      resultUrl: parsed.data.resultUrl,
     });
 
     return jsonOk(

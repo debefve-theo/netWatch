@@ -1,4 +1,7 @@
 const DEFAULT_OFFLINE_THRESHOLD_MINUTES = 10;
+const DEFAULT_ALERT_MIN_DOWNLOAD_MBPS = 50;
+const DEFAULT_ALERT_MIN_UPLOAD_MBPS = 3;
+const DEFAULT_ALERT_COOLDOWN_MINUTES = 30;
 
 export function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -30,4 +33,34 @@ export function getOfflineThresholdMs(): number {
 
 export function getAppName(): string {
   return process.env.NEXT_PUBLIC_APP_NAME ?? "NetWatch";
+}
+
+function getPositiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = value ? Number.parseFloat(value) : fallback;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+export function getAlertMinDownloadMbps(): number {
+  return getPositiveNumber(process.env.ALERT_MIN_DOWNLOAD_MBPS, DEFAULT_ALERT_MIN_DOWNLOAD_MBPS);
+}
+
+export function getAlertMinUploadMbps(): number {
+  return getPositiveNumber(process.env.ALERT_MIN_UPLOAD_MBPS, DEFAULT_ALERT_MIN_UPLOAD_MBPS);
+}
+
+export function getAlertCooldownMinutes(): number {
+  return getPositiveNumber(process.env.ALERT_COOLDOWN_MINUTES, DEFAULT_ALERT_COOLDOWN_MINUTES);
+}
+
+export function getTelegramBotToken(): string | null {
+  return process.env.TELEGRAM_BOT_TOKEN ?? null;
+}
+
+export function getTelegramChatId(): string | null {
+  return process.env.TELEGRAM_CHAT_ID ?? null;
 }

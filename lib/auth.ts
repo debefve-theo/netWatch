@@ -10,6 +10,7 @@ export type AuthenticatedDevice = {
   id: string;
   name: string;
   enabled: boolean;
+  lastPerformanceAlertAt: Date | null;
 };
 
 export function extractBearerToken(request: NextRequest): string | null {
@@ -44,7 +45,13 @@ export async function authenticateDeviceRequest(
 
   const device = await prisma.device.findUnique({
     where: { id: deviceId },
-    select: { id: true, name: true, apiKeyHash: true, enabled: true },
+    select: {
+      id: true,
+      name: true,
+      apiKeyHash: true,
+      enabled: true,
+      lastPerformanceAlertAt: true,
+    },
   });
 
   if (!device || !device.enabled) {
@@ -69,6 +76,7 @@ export async function authenticateDeviceRequest(
       id: device.id,
       name: device.name,
       enabled: device.enabled,
+      lastPerformanceAlertAt: device.lastPerformanceAlertAt,
     }
   };
 }

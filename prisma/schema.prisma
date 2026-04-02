@@ -18,6 +18,7 @@ model Device {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   lastSeenAt     DateTime? @map("last_seen_at")
+  lastPerformanceAlertAt DateTime? @map("last_performance_alert_at")
 
   speedtestResults SpeedtestResult[]
 
