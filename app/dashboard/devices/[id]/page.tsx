@@ -8,7 +8,7 @@ import { SpeedChart } from "@/components/dashboard/speed-chart";
 import { LatencyChart } from "@/components/dashboard/latency-chart";
 import { PacketLossChart } from "@/components/dashboard/packet-loss-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { getOverviewStats, getSpeedtestHistory } from "@/lib/queries";
+import { getChartData, getOverviewStats, getSpeedtestHistory } from "@/lib/queries";
 import { getNetworkQuality } from "@/lib/network-quality";
 import { firstQueryValue, formatMbps, formatMs, formatPercent } from "@/lib/utils";
 import { LocalTime } from "@/components/ui/local-time";
@@ -38,15 +38,15 @@ export default async function DeviceDetailPage({ params, searchParams }: Props) 
   const page = parsedSearch.success ? parsedSearch.data.page : 1;
   const deviceId = parsedDeviceId.data;
 
-  const [stats, history] = await Promise.all([
+  const [stats, chartData, history] = await Promise.all([
     getOverviewStats(deviceId, range),
+    getChartData(deviceId, range),
     getSpeedtestHistory({ deviceId, range, page, pageSize: 30 }),
   ]);
 
   if (!stats || !history) notFound();
 
   const latest = stats.latestResult;
-  const chartData = [...history.data].reverse();
   const quality = getNetworkQuality(latest);
   const hasData = stats.totalTests > 0;
 

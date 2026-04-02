@@ -119,6 +119,39 @@ export async function getOverviewStats(
   };
 }
 
+/**
+ * Fetch all chart data points for a device in a given range.
+ * Returns them oldest-first so charts render left→right chronologically.
+ * No pagination — fetches everything (capped at 2000 rows to avoid OOM).
+ */
+export async function getChartData(deviceId: string, range: TimeRange) {
+  const since = rangeToDate(range);
+  const rows = await prisma.speedtestResult.findMany({
+    where: { deviceId, measuredAt: { gte: since } },
+    orderBy: { measuredAt: "asc" },
+    take: 2000,
+    select: {
+      id: true,
+      deviceId: true,
+      measuredAt: true,
+      downloadMbps: true,
+      uploadMbps: true,
+      pingMs: true,
+      jitterMs: true,
+      packetLoss: true,
+      isp: true,
+      externalIp: true,
+      serverId: true,
+      serverName: true,
+      serverLocation: true,
+      serverCountry: true,
+      resultUrl: true,
+      createdAt: true,
+    },
+  });
+  return rows.map(serializeSpeedtestResult);
+}
+
 export async function getGlobalHistory(input: {
   deviceId?: string;
   range: TimeRange;
