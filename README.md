@@ -135,6 +135,8 @@ APP_PORT=8080
 POSTGRES_PASSWORD=change-me
 DATABASE_URL=postgresql://speedtest:change-me@postgres:5432/speedtest_db?schema=public
 API_KEY_PEPPER=generate-with-openssl-rand-hex-32
+DASHBOARD_PASSWORD=change-me
+SESSION_SECRET=generate-with-openssl-rand-hex-32
 ```
 
 ### Lancer la stack
