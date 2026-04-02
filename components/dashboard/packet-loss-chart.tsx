@@ -31,7 +31,7 @@ export function PacketLossChart({ data }: { data: SpeedtestRow[] }) {
             <YAxis axisLine={false} tickLine={false} stroke="rgba(148, 163, 184, 0.5)" width={52} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#1f1f22",
+                backgroundColor: "#18181b",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 10,
               }}

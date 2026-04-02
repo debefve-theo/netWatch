@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SpeedtestRow } from "@/types";
-import { formatDateTime, formatMbps, formatMs, formatPercent } from "@/lib/utils";
+import { formatMbps, formatMs, formatPercent } from "@/lib/utils";
+import { LocalTime } from "@/components/ui/local-time";
 
 type HistoryTableProps = {
   title: string;
@@ -47,7 +48,7 @@ export function HistoryTable({
             <tbody className="divide-y divide-zinc-700/30">
               {results.map((result) => (
                 <tr key={result.id} className="transition hover:bg-zinc-700/20">
-                  <td className="whitespace-nowrap px-5 py-3 font-mono text-zinc-400">{formatDateTime(result.measuredAt)}</td>
+                  <td className="whitespace-nowrap px-5 py-3 font-mono text-zinc-400"><LocalTime date={result.measuredAt} /></td>
                   <td className="whitespace-nowrap px-5 py-3 font-mono text-zinc-200">{formatMbps(result.downloadMbps)} <span className="text-zinc-500">Mbps</span></td>
                   <td className="whitespace-nowrap px-5 py-3 font-mono text-zinc-200">{formatMbps(result.uploadMbps)} <span className="text-zinc-500">Mbps</span></td>
                   <td className="whitespace-nowrap px-5 py-3 font-mono text-zinc-200">{formatMs(result.pingMs)} <span className="text-zinc-500">ms</span></td>

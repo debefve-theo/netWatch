@@ -119,6 +119,39 @@ export async function getOverviewStats(
   };
 }
 
+export async function getGlobalHistory(input: {
+  deviceId?: string;
+  range: TimeRange;
+  page?: number;
+  pageSize?: number;
+}): Promise<SpeedtestPage> {
+  const { deviceId, range, page = 1, pageSize = 50 } = input;
+  const since = rangeToDate(range);
+
+  const where = {
+    ...(deviceId ? { deviceId } : {}),
+    measuredAt: { gte: since },
+  };
+
+  const [total, rows] = await Promise.all([
+    prisma.speedtestResult.count({ where }),
+    prisma.speedtestResult.findMany({
+      where,
+      orderBy: { measuredAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  return {
+    data: rows.map(serializeSpeedtestResult),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
 export async function getSpeedtestHistory(input: {
   deviceId: string;
   range: TimeRange;

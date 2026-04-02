@@ -3,7 +3,7 @@
  */
 import { z } from "zod";
 
-export const timeRangeSchema = z.enum(["1h", "6h", "24h", "7d", "30d"]);
+export const timeRangeSchema = z.enum(["1h", "6h", "24h", "3d", "7d", "30d"]);
 
 const optionalTrimmedString = (max: number) =>
   z.preprocess(

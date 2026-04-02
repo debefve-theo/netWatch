@@ -1,188 +1,195 @@
 import { notFound } from "next/navigation";
-import { Activity, ArrowDownToLine, ArrowUpToLine, Gauge } from "lucide-react";
-import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
+import { Activity, ArrowDownToLine, ArrowUpToLine, Clock, ExternalLink, Gauge, Globe } from "lucide-react";
 import { DeviceStatusBadge } from "@/components/dashboard/device-status-badge";
-import { HistoryTable } from "@/components/dashboard/history-table";
-import { LatencyChart } from "@/components/dashboard/latency-chart";
 import { NetworkQualityBadge } from "@/components/dashboard/network-quality-badge";
-import { OverviewStatsPanel } from "@/components/dashboard/overview-stats";
-import { PacketLossChart } from "@/components/dashboard/packet-loss-chart";
-import { SectionCard } from "@/components/dashboard/section-card";
+import { HistoryTable } from "@/components/dashboard/history-table";
+import { RangeSelector } from "@/components/dashboard/range-selector";
 import { SpeedChart } from "@/components/dashboard/speed-chart";
+import { LatencyChart } from "@/components/dashboard/latency-chart";
+import { PacketLossChart } from "@/components/dashboard/packet-loss-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { getOverviewStats, getSpeedtestHistory, listDevices } from "@/lib/queries";
+import { getOverviewStats, getSpeedtestHistory } from "@/lib/queries";
 import { getNetworkQuality } from "@/lib/network-quality";
-import { firstQueryValue, formatDateTime, formatMbps, formatMs, formatPercent } from "@/lib/utils";
+import { firstQueryValue, formatMbps, formatMs, formatPercent } from "@/lib/utils";
+import { LocalTime } from "@/components/ui/local-time";
 import { deviceHistorySearchSchema, deviceIdSchema } from "@/lib/validators";
 import { formatDistanceToNowStrict } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const dynamic = "force-dynamic";
 
-type DeviceDetailPageProps = {
+type Props = {
   params: Promise<{ id: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function DeviceDetailPage({ params, searchParams }: DeviceDetailPageProps) {
+export default async function DeviceDetailPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const parsedDeviceId = deviceIdSchema.safeParse(resolvedParams.id);
+  if (!parsedDeviceId.success) notFound();
 
-  if (!parsedDeviceId.success) {
-    notFound();
-  }
-
-  const resolvedSearchParams = (await searchParams) ?? {};
+  const resolvedSearch = (await searchParams) ?? {};
   const parsedSearch = deviceHistorySearchSchema.safeParse({
-    range: firstQueryValue(resolvedSearchParams.range),
-    page: firstQueryValue(resolvedSearchParams.page),
+    range: firstQueryValue(resolvedSearch.range),
+    page: firstQueryValue(resolvedSearch.page),
   });
 
   const range = parsedSearch.success ? parsedSearch.data.range : "24h";
   const page = parsedSearch.success ? parsedSearch.data.page : 1;
+  const deviceId = parsedDeviceId.data;
 
-  const [devices, stats, history] = await Promise.all([
-    listDevices(),
-    getOverviewStats(parsedDeviceId.data, range),
-    getSpeedtestHistory({
-      deviceId: parsedDeviceId.data,
-      range,
-      page,
-      pageSize: 25,
-    }),
+  const [stats, history] = await Promise.all([
+    getOverviewStats(deviceId, range),
+    getSpeedtestHistory({ deviceId, range, page, pageSize: 30 }),
   ]);
 
-  if (!stats || !history) {
-    notFound();
-  }
+  if (!stats || !history) notFound();
 
   const latest = stats.latestResult;
   const chartData = [...history.data].reverse();
   const quality = getNetworkQuality(latest);
+  const hasData = stats.totalTests > 0;
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-zinc-700 bg-zinc-800 p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Device detail</p>
-              <DeviceStatusBadge status={stats.device.status} />
-              <NetworkQualityBadge quality={quality} />
-            </div>
-            <h1 className="text-3xl font-semibold text-white">{stats.device.name}</h1>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-400">
-              <span>{stats.device.locationLabel ?? "No location set"}</span>
-              <span>
-                Last contact{" "}
-                {stats.device.lastSeenAt
-                  ? formatDistanceToNowStrict(new Date(stats.device.lastSeenAt), {
-                      addSuffix: true,
-                    })
-                  : "never"}
-              </span>
-              <span>{stats.device.resultsCount} total tests</span>
-            </div>
+    <div className="space-y-5">
+      {/* Device header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold text-zinc-100">{stats.device.name}</h1>
+            <DeviceStatusBadge status={stats.device.status} />
+            <NetworkQualityBadge quality={quality} />
           </div>
-          <DashboardFilters
-            devices={devices}
-            currentDeviceId={stats.device.id}
-            currentRange={range}
-            switchToOverviewOnDeviceChange
-          />
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+            {stats.device.locationLabel && (
+              <span className="flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                {stats.device.locationLabel}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Last seen{" "}
+              {stats.device.lastSeenAt
+                ? formatDistanceToNowStrict(new Date(stats.device.lastSeenAt), { addSuffix: true })
+                : "never"}
+            </span>
+            <span>{stats.device.resultsCount.toLocaleString()} total tests</span>
+          </div>
         </div>
-      </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <RangeSelector currentRange={range} />
+      </div>
+
+      {/* KPI cards */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Download"
-          value={latest ? formatMbps(latest.downloadMbps) : "0.0"}
+          value={latest ? formatMbps(latest.downloadMbps) : "—"}
           unit="Mbps"
-          subtitle={stats.totalTests > 0 ? `Avg ${formatMbps(stats.avgDownloadMbps)} · Peak ${formatMbps(stats.maxDownloadMbps)} Mbps` : "No data"}
-          accent="blue"
+          subtitle={hasData ? `avg ${formatMbps(stats.avgDownloadMbps)} · max ${formatMbps(stats.maxDownloadMbps)}` : "No data in range"}
           icon={<ArrowDownToLine className="h-4 w-4" />}
+          accent="blue"
+          trend={hasData ? { value: 0 } : undefined}
         />
         <StatCard
           title="Upload"
-          value={latest ? formatMbps(latest.uploadMbps) : "0.0"}
+          value={latest ? formatMbps(latest.uploadMbps) : "—"}
           unit="Mbps"
-          subtitle={stats.totalTests > 0 ? `Avg ${formatMbps(stats.avgUploadMbps)} · Peak ${formatMbps(stats.maxUploadMbps)} Mbps` : "No data"}
-          accent="emerald"
+          subtitle={hasData ? `avg ${formatMbps(stats.avgUploadMbps)} · max ${formatMbps(stats.maxUploadMbps)}` : "No data in range"}
           icon={<ArrowUpToLine className="h-4 w-4" />}
+          accent="emerald"
         />
         <StatCard
           title="Ping"
-          value={latest ? formatMs(latest.pingMs) : "0.0"}
+          value={latest ? formatMs(latest.pingMs) : "—"}
           unit="ms"
-          subtitle={stats.totalTests > 0 ? `Avg ${formatMs(stats.avgPingMs)} · Min ${formatMs(stats.minPingMs)} ms` : "No data"}
-          accent="violet"
+          subtitle={hasData ? `avg ${formatMs(stats.avgPingMs)} · min ${formatMs(stats.minPingMs)}` : "No data in range"}
           icon={<Gauge className="h-4 w-4" />}
+          accent="violet"
         />
         <StatCard
-          title="Jitter"
-          value={latest ? formatMs(latest.jitterMs) : "0.0"}
+          title="Jitter / Loss"
+          value={latest ? formatMs(latest.jitterMs) : "—"}
           unit="ms"
-          subtitle={stats.totalTests > 0 ? `Avg ${formatMs(stats.avgJitterMs)} ms` : "No data"}
-          accent="amber"
+          subtitle={latest ? `packet loss ${formatPercent(latest.packetLoss)}%` : "No data"}
           icon={<Activity className="h-4 w-4" />}
+          accent="amber"
         />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <SectionCard
-          title="Latest measurement"
-          description={latest ? formatDateTime(latest.measuredAt) : "No measurement available yet."}
-        >
-          {latest ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">ISP</p>
-                <p className="mt-2 text-sm text-zinc-200">{latest.isp ?? "Unknown"}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">External IP</p>
-                <p className="mt-2 font-mono text-sm text-zinc-200">{latest.externalIp ?? "Unknown"}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Server</p>
-                <p className="mt-2 text-sm text-zinc-200">
-                  {latest.serverName ?? "Unknown"}
-                  {latest.serverLocation ? `, ${latest.serverLocation}` : ""}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Country</p>
-                <p className="mt-2 text-sm text-zinc-200">{latest.serverCountry ?? "Unknown"}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Packet loss</p>
-                <p className="mt-2 text-sm text-zinc-200">{formatPercent(latest.packetLoss)} %</p>
-              </div>
+      {/* Charts */}
+      {chartData.length === 0 ? (
+        <EmptyState
+          compact
+          title="No data for this range"
+          description="No speedtest results were recorded in the selected window. Try a wider range."
+        />
+      ) : (
+        <>
+          <section className="grid gap-4 xl:grid-cols-2">
+            <SpeedChart data={chartData} metric="downloadMbps" title="Download" color="#3b82f6" />
+            <SpeedChart data={chartData} metric="uploadMbps" title="Upload" color="#10b981" />
+          </section>
+          <section className="grid gap-4 xl:grid-cols-2">
+            <LatencyChart data={chartData} />
+            <PacketLossChart data={chartData} />
+          </section>
+        </>
+      )}
+
+      {/* Latest measurement details */}
+      {latest && (
+        <div className="rounded-xl border border-zinc-700 bg-zinc-800 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-zinc-100">Latest measurement</p>
+              <LocalTime date={latest.measuredAt} className="mt-0.5 text-xs text-zinc-500" />
             </div>
-          ) : (
-            <p className="text-sm text-zinc-400">No measurements stored for this device yet.</p>
-          )}
-        </SectionCard>
-        <OverviewStatsPanel stats={stats} />
-      </section>
+            {latest.resultUrl && (
+              <a
+                href={latest.resultUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Speedtest result
+              </a>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              { label: "ISP", value: latest.isp ?? "Unknown" },
+              { label: "External IP", value: latest.externalIp ?? "Unknown", mono: true },
+              { label: "Server", value: latest.serverName ? `${latest.serverName}${latest.serverLocation ? `, ${latest.serverLocation}` : ""}` : "Unknown" },
+              { label: "Country", value: latest.serverCountry ?? "Unknown" },
+              { label: "Packet loss", value: `${formatPercent(latest.packetLoss)}%` },
+            ].map(({ label, value, mono }) => (
+              <div key={label} className="rounded-lg border border-zinc-700/60 bg-zinc-900/50 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">{label}</p>
+                <p className={`mt-1.5 text-sm text-zinc-200 ${mono ? "font-mono" : ""}`}>{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <SpeedChart data={chartData} metric="downloadMbps" title="Download over time" color="#3b82f6" />
-        <SpeedChart data={chartData} metric="uploadMbps" title="Upload over time" color="#10b981" />
-        <LatencyChart data={chartData} />
-        <PacketLossChart data={chartData} />
-      </section>
-
+      {/* History table */}
       <HistoryTable
-        title="Stored history"
-        description={`Page ${history.page} of ${history.totalPages} in the ${range} window.`}
+        title="History"
+        description={`${history.total} result(s) in the ${range} window — page ${history.page} / ${history.totalPages}`}
         results={history.data}
         emptyDescription="No measurements found for the selected range."
-        pagination={{
-          currentPage: history.page,
-          totalPages: history.totalPages,
-          makeHref: (targetPage) =>
-            `/dashboard/devices/${stats.device.id}?range=${range}&page=${targetPage}`,
-        }}
+        pagination={
+          history.totalPages > 1
+            ? {
+                currentPage: history.page,
+                totalPages: history.totalPages,
+                makeHref: (p) => `/dashboard/devices/${deviceId}?range=${range}&page=${p}`,
+              }
+            : undefined
+        }
       />
     </div>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HardDrive } from "lucide-react";
 import type { DeviceSummary } from "@/types";
 import { DeviceStatusBadge } from "./device-status-badge";
+import { LocalTime } from "@/components/ui/local-time";
 
 export function DeviceList({ devices }: { devices: DeviceSummary[] }) {
   return (
@@ -32,23 +33,17 @@ export function DeviceList({ devices }: { devices: DeviceSummary[] }) {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Last measurement</p>
               <p className="mt-1.5 text-zinc-300">
-                {device.latestResultAt ? new Date(device.latestResultAt).toLocaleString() : "Never"}
+                {device.latestResultAt ? <LocalTime date={device.latestResultAt} /> : "Never"}
               </p>
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4">
             <Link
               className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400 transition hover:bg-blue-500/20 hover:text-blue-300"
-              href={`/dashboard?deviceId=${device.id}&range=24h`}
-            >
-              Overview
-            </Link>
-            <Link
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200"
               href={`/dashboard/devices/${device.id}`}
             >
-              Device detail
+              Open device →
             </Link>
           </div>
         </article>
