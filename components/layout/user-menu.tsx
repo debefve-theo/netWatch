@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { LogOut, Settings, User } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function UserMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+  }
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -46,7 +52,10 @@ export function UserMenu() {
             ))}
           </div>
           <div className="border-t border-zinc-800 p-1.5">
-            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+            >
               <LogOut className="h-4 w-4" />
               Sign out
             </button>
