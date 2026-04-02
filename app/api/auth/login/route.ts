@@ -29,11 +29,14 @@ export async function POST(request: NextRequest) {
   }
 
   const token = await computeSessionToken();
+  const isSecureRequest =
+    request.nextUrl.protocol === "https:" ||
+    request.headers.get("x-forwarded-proto") === "https";
 
   const response = NextResponse.json({ success: true });
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureRequest,
     sameSite: "lax",
     maxAge: COOKIE_MAX_AGE,
     path: "/",
