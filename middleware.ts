@@ -4,10 +4,10 @@ import { SESSION_COOKIE, computeSessionToken, isDashboardPasswordConfigured, saf
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow: login page, auth API routes, static assets
+  // Always allow: login page, all API routes, static assets
   if (
     pathname.startsWith("/login") ||
-    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   ) {
@@ -40,7 +40,7 @@ export const config = {
   matcher: [
     /*
      * Match all paths except Next.js internals and static files.
-     * /api/auth routes are excluded above in the function body.
+     * API routes are excluded above in the function body.
      */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
